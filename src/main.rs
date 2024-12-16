@@ -23,9 +23,6 @@ fn main() {
             });
 
             // Uncomment this block to pass the first stage
-            if !file_contents.is_empty() {
-                panic!("Scanner not implemented");
-            }
             tokenize(&file_contents);
         }
         _ => {
