@@ -43,6 +43,17 @@ fn tokenize(content: &str) {
 
             '}' => println!("RIGHT_BRACE }} null"),
 
+            '*' => println!("STAR * null"),
+
+            '.' => println!("DOT . null"),
+
+            ',' => println!("COMMA , null"),
+
+            '+' => println!("PLUS + null"),
+
+            '-' => println!("MINUS - null"),
+
+            ';' => println!("SEMICOLON ; null"),
             _ => {} // Ignore other characters for now
         }
     }
