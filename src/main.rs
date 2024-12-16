@@ -34,22 +34,57 @@ fn main() {
 }
 
 fn tokenize(content: &str) -> u8 {
+    //let chars: Vec<char> = content.chars().collect();
     let mut bad = false;
-    for char in content.chars() {
-        match char {
-            '(' => println!("LEFT_PAREN ( null"),
-            ')' => println!("RIGHT_PAREN ) null"),
-            '{' => println!("LEFT_BRACE {{ null"),
-            '}' => println!("RIGHT_BRACE }} null"),
-            '*' => println!("STAR * null"),
-            '.' => println!("DOT . null"),
-            ',' => println!("COMMA , null"),
-            '+' => println!("PLUS + null"),
-            '-' => println!("MINUS - null"),
-            ';' => println!("SEMICOLON ; null"),
-            '/' => println!("SLASH / null"),
-            _ => {
-                // Write errors to stderr instead of stdout
+    let mut token = "";
+
+    let mut skip_next = false;
+    let mut skipidi = false;
+    for (num, char) in content.chars().enumerate() {
+        if skip_next {
+            (bad, skipidi, token) = tokenize_more(char);
+            skip_next = skipidi;
+        }
+    }
+
+    println!("EOF  null");
+
+    if bad {
+        65
+    } else {
+        0
+    }
+}
+
+fn tokenize_more(char: char) -> (bool, bool, &str) {
+    let mut bad = false;
+    let mut skipidi = false;
+    match char {
+        '(' => println!("LEFT_PAREN ( null"),
+        ')' => println!("RIGHT_PAREN ) null"),
+        '{' => println!("LEFT_BRACE {{ null"),
+        '}' => println!("RIGHT_BRACE }} null"),
+        '*' => println!("STAR * null"),
+        '.' => println!("DOT . null"),
+        ',' => println!("COMMA , null"),
+        '+' => println!("PLUS + null"),
+        '-' => println!("MINUS - null"),
+        ';' => println!("SEMICOLON ; null"),
+        '/' => println!("SLASH / null"),
+        '=' => {
+            if num + 1 < chars.len() && chars[num + 1] == '=' {
+                println!("EQUAL_EQUAL == null");
+                // Skip the next iteration since we've handled both characters
+                if num + 1 < chars.len() {
+                    continue;
+                }
+            } else {
+                println!("EQUAL = null");
+            }
+        }
+
+        _ => {
+            if !char.is_whitespace() {
                 writeln!(
                     io::stderr(),
                     "[line 1] Error: Unexpected character: {}",
@@ -60,11 +95,5 @@ fn tokenize(content: &str) -> u8 {
             }
         }
     }
-
-    println!("EOF  null");
-    if bad {
-        65
-    } else {
-        0
-    }
+    (bad,)
 }
