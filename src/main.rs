@@ -54,8 +54,13 @@ fn tokenize(content: &str) {
             '-' => println!("MINUS - null"),
 
             ';' => println!("SEMICOLON ; null"),
-            _ => {} // Ignore other characters for now
+
+            _ => {
+                println!("[line 1] Error: Unexpected character: {}", char);
+                std::process::exit(65);
+            }
         }
     }
+
     println!("EOF  null");
 }
