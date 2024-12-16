@@ -28,10 +28,24 @@ fn main() {
             } else {
                 println!("EOF  null"); // Placeholder, remove this line when implementing the scanner
             }
+            tokenize(&file_contents);
         }
         _ => {
             writeln!(io::stderr(), "Unknown command: {}", command).unwrap();
             return;
         }
+    }
+}
+
+fn tokenize(content: &str) {
+    for char in content.chars() {
+        match char {
+            '(' => println!("LEFT_PAREN ( null"),
+
+            ')' => println!("RIGHT_PAREN ) null"),
+
+            _ => {} // Ignore other characters for now
+        }
+        println!("EOF  null");
     }
 }
