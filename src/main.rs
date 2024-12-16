@@ -39,9 +39,12 @@ fn tokenize(content: &str) {
 
             ')' => println!("RIGHT_PAREN ) null"),
 
+            '{' => println!("LEFT_BRACE {{ null"),
+
+            '}' => println!("RIGHT_BRACE }} null"),
+
             _ => {} // Ignore other characters for now
         }
     }
-
     println!("EOF  null");
 }
