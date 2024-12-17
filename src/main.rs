@@ -46,6 +46,14 @@ fn tokenize(content: &str) -> u8 {
         .iter()
         .cloned()
         .collect();
+
+    let keywords: HashSet<&str> = [
+        "and", "class", "else", "false", "for", "fun", "if", "nil", "or", "print", "return",
+        "super", "this", "true", "var", "while",
+    ]
+    .iter()
+    .cloned()
+    .collect();
     while i < chars.len() {
         if chars[i] == '\n' {
             unsafe {
@@ -147,7 +155,6 @@ fn tokenize(content: &str) -> u8 {
                     BAD = true;
                 }
             }
-
             continue;
         } else if valid_chars.contains(&chars[i]) {
             token = tokenize_more(chars[i]);
@@ -193,7 +200,12 @@ fn tokenize(content: &str) -> u8 {
                 identifier.push(chars[i]);
                 i += 1;
             }
-            println!("IDENTIFIER {} null", identifier);
+            if keywords.contains(identifier.as_str()) {
+                let temp_token = check_word(identifier.as_str());
+                println!("{}", temp_token);
+            } else {
+                println!("IDENTIFIER {} null", identifier);
+            }
             continue;
         } else {
             unsafe {
@@ -239,4 +251,26 @@ fn tokenize_more(char: char) -> String {
         }
     }
     String::from(token)
+}
+fn check_word(word: &str) -> &str {
+    match word {
+        "and" => "AND and null",
+        "class" => "CLASS class null",
+        "else" => "ELSE else null",
+        "false" => "FALSE false null",
+        "for" => "FOR for null",
+        "fun" => "FUN fun null",
+        "if" => "IF if null",
+        "nil" => "NIL nil null",
+        "or" => "OR or null",
+        "print" => "PRINT print null",
+        "return" => "RETURN return null",
+        "super" => "SUPER super null",
+        "this" => "THIS this null",
+        "true" => "TRUE true null",
+        "var" => "VAR var null",
+        "while" => "WHILE while null",
+
+        _ => "",
+    }
 }
