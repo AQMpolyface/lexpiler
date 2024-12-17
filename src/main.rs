@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+use std::convert::identity;
 use std::env;
 use std::fs;
 use std::io::{self, Write};
@@ -40,8 +42,20 @@ fn tokenize(content: &str) -> u8 {
     let chars: Vec<char> = content.chars().collect();
 
     let mut i = 0;
+    let valid_chars: HashSet<char> = ['(', ')', '{', '}', '*', '.', ',', '+', '-', ';', '/', '\n']
+        .iter()
+        .cloned()
+        .collect();
     while i < chars.len() {
-        if chars[i] == '=' {
+        if chars[i] == '\n' {
+            unsafe {
+                LINE += 1;
+            }
+        }
+        if chars[i].is_whitespace() {
+            i += 1;
+            continue;
+        } else if chars[i] == '=' {
             if i + 1 < chars.len() && chars[i + 1] == '=' {
                 token = String::from("EQUAL_EQUAL == null");
                 println!("{}", token);
@@ -53,8 +67,7 @@ fn tokenize(content: &str) -> u8 {
                 i += 1; // Skip the current and the next character
                 continue;
             }
-        }
-        if chars[i] == '!' {
+        } else if chars[i] == '!' {
             if i + 1 < chars.len() && chars[i + 1] == '=' {
                 token = String::from("BANG_EQUAL != null");
                 println!("{}", token);
@@ -66,8 +79,7 @@ fn tokenize(content: &str) -> u8 {
                 i += 1; // Skip the current and the next character
                 continue;
             }
-        }
-        if chars[i] == '<' {
+        } else if chars[i] == '<' {
             if i + 1 < chars.len() && chars[i + 1] == '=' {
                 token = String::from("LESS_EQUAL <= null");
                 println!("{}", token);
@@ -79,8 +91,7 @@ fn tokenize(content: &str) -> u8 {
                 i += 1; // Skip the current and the next character
                 continue;
             }
-        }
-        if chars[i] == '>' {
+        } else if chars[i] == '>' {
             if i + 1 < chars.len() && chars[i + 1] == '=' {
                 token = String::from("GREATER_EQUAL >= null");
                 println!("{}", token);
@@ -92,8 +103,7 @@ fn tokenize(content: &str) -> u8 {
                 i += 1; // Skip the current and the next character
                 continue;
             }
-        }
-        if chars[i] == '/' {
+        } else if chars[i] == '/' {
             if i + 1 < chars.len() && chars[i + 1] == '/' {
                 while i < chars.len() && chars[i] != '\n' {
                     i += 1;
@@ -106,9 +116,7 @@ fn tokenize(content: &str) -> u8 {
                 i += 1; // Skip the current and the next character
                 continue;
             }
-        }
-
-        if chars[i] == '"' {
+        } else if chars[i] == '"' {
             let mut string_vec = String::new();
             i += 1; // Start after the opening quote
             let mut is_terminated = false; // Flag to check if the string is terminated
@@ -141,8 +149,14 @@ fn tokenize(content: &str) -> u8 {
             }
 
             continue;
-        }
-        if chars[i].is_numeric() {
+        } else if valid_chars.contains(&chars[i]) {
+            token = tokenize_more(chars[i]);
+            if !token.is_empty() {
+                println!("{}", token);
+            }
+            i += 1;
+            continue;
+        } else if chars[i].is_numeric() {
             let mut numbers = String::new();
             //var to track weather the number has multiple points
             //let mut has_point = false;
@@ -171,13 +185,23 @@ fn tokenize(content: &str) -> u8 {
                 println!("NUMBER {} {}.0", numbers, numbers);
             }
             continue;
+        } else if chars[i].is_alphabetic()
+            || chars[i] == '_' && !chars[i].is_whitespace() && !valid_chars.contains(&chars[i])
+        {
+            let mut identifier = String::new();
+            while i < chars.len() && !chars[i].is_whitespace() && !valid_chars.contains(&chars[i]) {
+                identifier.push(chars[i]);
+                i += 1;
+            }
+            println!("IDENTIFIER {} null", identifier);
+            continue;
+        } else {
+            unsafe {
+                eprintln!("[line {}] Error: Unexpected character: {}", LINE, chars[i]);
+                BAD = true;
+                i += 1;
+            }
         }
-        token = tokenize_more(chars[i]);
-
-        if !token.is_empty() {
-            println!("{}", token);
-        }
-        i += 1;
     }
 
     println!("EOF  null");
@@ -204,9 +228,7 @@ fn tokenize_more(char: char) -> String {
         '-' => token = "MINUS - null",
         ';' => token = "SEMICOLON ; null",
         '/' => token = "SLASH / null",
-        '\n' => unsafe {
-            LINE += 1;
-        },
+
         _ => {
             if !char.is_whitespace() {
                 unsafe {
