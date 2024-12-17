@@ -1,8 +1,8 @@
 use std::env;
 use std::fs;
 use std::io::{self, Write};
-
 static mut BAD: bool = false;
+static mut LINE: u32 = 1;
 #[quit::main]
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -96,7 +96,10 @@ fn tokenize(content: &str) -> u8 {
             if i + 1 < chars.len() && chars[i + 1] == '/' {
                 //token = String::from("");
                 //println!("{}", token);
-                i += chars.len(); // Skip the current and the next character
+                while i < chars.len() && chars[i] != '\n' {
+                    i += 1;
+                }
+
                 continue;
             } else {
                 token = String::from("SLASH / null");
@@ -124,7 +127,6 @@ fn tokenize(content: &str) -> u8 {
 }
 
 fn tokenize_more(char: char) -> String {
-    let mut bad = false;
     let mut token = "";
     match char {
         '(' => token = "LEFT_PAREN ( null",
@@ -138,15 +140,13 @@ fn tokenize_more(char: char) -> String {
         '-' => token = "MINUS - null",
         ';' => token = "SEMICOLON ; null",
         '/' => token = "SLASH / null",
+        '\n' => unsafe {
+            LINE += 1;
+        },
         _ => {
             if !char.is_whitespace() {
-                writeln!(
-                    io::stderr(),
-                    "[line 1] Error: Unexpected character: {}",
-                    char
-                )
-                .unwrap();
                 unsafe {
+                    eprintln!("[line {}] Error: Unexpected character: {}", LINE, char);
                     BAD = true;
                 }
             }
