@@ -1,7 +1,9 @@
 use std::env;
 use std::fs;
 use std::io::{self, Write};
+//flag to exit withcode 65 compile error
 static mut BAD: bool = false;
+//tracking the number of lines
 static mut LINE: u32 = 1;
 #[quit::main]
 fn main() {
@@ -34,7 +36,6 @@ fn main() {
 }
 
 fn tokenize(content: &str) -> u8 {
-    //let chars: Vec<char> = content.chars().collect();
     let mut token = String::new();
     let chars: Vec<char> = content.chars().collect();
 
@@ -83,7 +84,7 @@ fn tokenize(content: &str) -> u8 {
             if i + 1 < chars.len() && chars[i + 1] == '=' {
                 token = String::from("GREATER_EQUAL >= null");
                 println!("{}", token);
-                i += 2; // Skip the current and the next character
+                i += 2;
                 continue;
             } else {
                 token = String::from("GREATER > null");
@@ -94,8 +95,6 @@ fn tokenize(content: &str) -> u8 {
         }
         if chars[i] == '/' {
             if i + 1 < chars.len() && chars[i + 1] == '/' {
-                //token = String::from("");
-                //println!("{}", token);
                 while i < chars.len() && chars[i] != '\n' {
                     i += 1;
                 }
@@ -108,6 +107,42 @@ fn tokenize(content: &str) -> u8 {
                 continue;
             }
         }
+
+        if chars[i] == '"' {
+            let mut string_vec = String::new();
+            i += 1; // Start after the opening quote
+            let mut is_terminated = false; // Flag to check if the string is terminated
+
+            while i < chars.len() && chars[i] != '"' {
+                if chars[i] == '\n' {
+                    // Handle the case where a newline is encountered before the closing quote
+                    unsafe {
+                        eprintln!("[line {}] Error: Unterminated string.", LINE);
+                        BAD = true;
+                    }
+                    break; // Exit the loop, don't push the string
+                }
+                string_vec.push(chars[i]);
+                i += 1;
+            }
+            if i < chars.len() && chars[i] == '"' {
+                i += 1; // Skip the closing quote
+                is_terminated = true;
+            }
+
+            if is_terminated {
+                token = format!("STRING \"{}\" {}", string_vec, string_vec);
+                println!("{}", token);
+            } else {
+                unsafe {
+                    eprintln!("[line {}] Error: Unterminated string.", LINE);
+                    BAD = true;
+                }
+            }
+
+            continue;
+        }
+
         token = tokenize_more(chars[i]);
 
         if !token.is_empty() {
