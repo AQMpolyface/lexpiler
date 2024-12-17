@@ -66,6 +66,32 @@ fn tokenize(content: &str) -> u8 {
                 continue;
             }
         }
+        if chars[i] == '<' {
+            if i + 1 < chars.len() && chars[i + 1] == '=' {
+                token = String::from("LESS_EQUAL <= null");
+                println!("{}", token);
+                i += 2; // Skip the current and the next character
+                continue;
+            } else {
+                token = String::from("LESS < null");
+                println!("{}", token);
+                i += 1; // Skip the current and the next character
+                continue;
+            }
+        }
+        if chars[i] == '>' {
+            if i + 1 < chars.len() && chars[i + 1] == '=' {
+                token = String::from("GREATER_EQUAL >= null");
+                println!("{}", token);
+                i += 2; // Skip the current and the next character
+                continue;
+            } else {
+                token = String::from("GREATER > null");
+                println!("{}", token);
+                i += 1; // Skip the current and the next character
+                continue;
+            }
+        }
         token = tokenize_more(chars[i]);
 
         if !token.is_empty() {
