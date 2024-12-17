@@ -92,6 +92,19 @@ fn tokenize(content: &str) -> u8 {
                 continue;
             }
         }
+        if chars[i] == '/' {
+            if i + 1 < chars.len() && chars[i + 1] == '/' {
+                //token = String::from("");
+                //println!("{}", token);
+                i += chars.len(); // Skip the current and the next character
+                continue;
+            } else {
+                token = String::from("SLASH / null");
+                println!("{}", token);
+                i += 1; // Skip the current and the next character
+                continue;
+            }
+        }
         token = tokenize_more(chars[i]);
 
         if !token.is_empty() {
