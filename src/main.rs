@@ -138,7 +138,6 @@ fn tokenize_more(char: char) -> String {
         '-' => token = "MINUS - null",
         ';' => token = "SEMICOLON ; null",
         '/' => token = "SLASH / null",
-
         _ => {
             if !char.is_whitespace() {
                 writeln!(
