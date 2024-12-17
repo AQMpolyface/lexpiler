@@ -2,6 +2,7 @@ use std::env;
 use std::fs;
 use std::io::{self, Write};
 
+static mut BAD: bool = false;
 #[quit::main]
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -28,60 +29,63 @@ fn main() {
         }
         _ => {
             writeln!(io::stderr(), "Unknown command: {}", command).unwrap();
-            quit::with_code(64);
         }
     }
 }
 
 fn tokenize(content: &str) -> u8 {
     //let chars: Vec<char> = content.chars().collect();
-    let mut bad = false;
-    let mut token = "";
+    let mut token = String::new();
+    let chars: Vec<char> = content.chars().collect();
 
-    let mut skip_next = false;
-    let mut skipidi = false;
-    for (num, char) in content.chars().enumerate() {
-        if skip_next {
-            (bad, skipidi, token) = tokenize_more(char);
-            skip_next = skipidi;
+    let mut i = 0;
+    while i < chars.len() {
+        if chars[i] == '=' {
+            if i + 1 < chars.len() && chars[i + 1] == '=' {
+                token = String::from("EQUAL_EQUAL == null");
+                println!("{}", token);
+                i += 2; // Skip the current and the next character
+                continue;
+            } else {
+                token = String::from("EQUAL = null");
+                println!("{}", token);
+                i += 1; // Skip the current and the next character
+                continue;
+            }
         }
+        token = tokenize_more(chars[i]);
+
+        if !token.is_empty() {
+            println!("{}", token);
+        }
+        i += 1;
     }
 
     println!("EOF  null");
-
-    if bad {
-        65
-    } else {
-        0
+    unsafe {
+        if BAD {
+            65
+        } else {
+            0
+        }
     }
 }
 
-fn tokenize_more(char: char) -> (bool, bool, &str) {
+fn tokenize_more(char: char) -> String {
     let mut bad = false;
-    let mut skipidi = false;
+    let mut token = "";
     match char {
-        '(' => println!("LEFT_PAREN ( null"),
-        ')' => println!("RIGHT_PAREN ) null"),
-        '{' => println!("LEFT_BRACE {{ null"),
-        '}' => println!("RIGHT_BRACE }} null"),
-        '*' => println!("STAR * null"),
-        '.' => println!("DOT . null"),
-        ',' => println!("COMMA , null"),
-        '+' => println!("PLUS + null"),
-        '-' => println!("MINUS - null"),
-        ';' => println!("SEMICOLON ; null"),
-        '/' => println!("SLASH / null"),
-        '=' => {
-            if num + 1 < chars.len() && chars[num + 1] == '=' {
-                println!("EQUAL_EQUAL == null");
-                // Skip the next iteration since we've handled both characters
-                if num + 1 < chars.len() {
-                    continue;
-                }
-            } else {
-                println!("EQUAL = null");
-            }
-        }
+        '(' => token = "LEFT_PAREN ( null",
+        ')' => token = "RIGHT_PAREN ) null",
+        '{' => token = "LEFT_BRACE { null",
+        '}' => token = "RIGHT_BRACE } null",
+        '*' => token = "STAR * null",
+        '.' => token = "DOT . null",
+        ',' => token = "COMMA , null",
+        '+' => token = "PLUS + null",
+        '-' => token = "MINUS - null",
+        ';' => token = "SEMICOLON ; null",
+        '/' => token = "SLASH / null",
 
         _ => {
             if !char.is_whitespace() {
@@ -91,9 +95,11 @@ fn tokenize_more(char: char) -> (bool, bool, &str) {
                     char
                 )
                 .unwrap();
-                bad = true;
+                unsafe {
+                    BAD = true;
+                }
             }
         }
     }
-    (bad,)
+    String::from(token)
 }
