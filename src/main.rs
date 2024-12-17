@@ -146,22 +146,9 @@ fn tokenize(content: &str) -> u8 {
             let mut numbers = String::new();
             //var to track weather the number has multiple points
             //let mut has_point = false;
-            while chars[i].is_numeric() || chars[i] == '.' {
+            while i < chars.len() && (chars[i].is_numeric() || chars[i] == '.') {
                 numbers.push(chars[i]);
-
                 i += 1;
-                /*   } else {
-                    unsafe {
-                        eprintln!(
-                               "[line {}] Error: Unterminated number. Numbers can't have multiple \".\"",
-                               LINE
-                           );
-                        BAD = true;
-                    }
-                }
-                if chars[i] == '.' {
-                    has_point = true;
-                }*/
             }
             /*   if numbers.ends_with(".") {
                 unsafe {
@@ -173,10 +160,17 @@ fn tokenize(content: &str) -> u8 {
                 }
             }*/
             if numbers.contains(".") {
-                println!("NUMBER {} {}", numbers, numbers);
+                let parts: Vec<&str> = numbers.split('.').collect();
+                if parts.len() == 2 && parts[1].chars().all(|c| c == '0') {
+                    println!("NUMBER {} {}.0", numbers, parts[0]);
+                } else {
+                    // Otherwise keep the original number
+                    println!("NUMBER {} {}", numbers, numbers);
+                }
             } else {
                 println!("NUMBER {} {}.0", numbers, numbers);
             }
+            continue;
         }
         token = tokenize_more(chars[i]);
 
