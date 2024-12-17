@@ -142,7 +142,42 @@ fn tokenize(content: &str) -> u8 {
 
             continue;
         }
+        if chars[i].is_numeric() {
+            let mut numbers = String::new();
+            //var to track weather the number has multiple points
+            //let mut has_point = false;
+            while chars[i].is_numeric() || chars[i] == '.' {
+                numbers.push(chars[i]);
 
+                i += 1;
+                /*   } else {
+                    unsafe {
+                        eprintln!(
+                               "[line {}] Error: Unterminated number. Numbers can't have multiple \".\"",
+                               LINE
+                           );
+                        BAD = true;
+                    }
+                }
+                if chars[i] == '.' {
+                    has_point = true;
+                }*/
+            }
+            /*   if numbers.ends_with(".") {
+                unsafe {
+                    eprintln!(
+                        "[line {}] Error: Unterminated number. Numbers can't end with \".\"",
+                        LINE
+                    );
+                    BAD = true;
+                }
+            }*/
+            if numbers.contains(".") {
+                println!("NUMBER {} {}", numbers, numbers);
+            } else {
+                println!("NUMBER {} {}.0", numbers, numbers);
+            }
+        }
         token = tokenize_more(chars[i]);
 
         if !token.is_empty() {
