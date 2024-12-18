@@ -134,8 +134,14 @@ impl Lexer {
                     }
                     if numbers.contains('.') {
                         let parts: Vec<&str> = numbers.split('.').collect();
-                        if parts.len() == 2 && parts[1].chars().all(|c| c == '0') {
-                            println!("NUMBER {} {}.0", numbers, parts[0]);
+                        if parts.len() == 2 {
+                            // Remove trailing zeros from decimal part
+                            let decimal_part = parts[1].trim_end_matches('0').to_string();
+                            if decimal_part.is_empty() {
+                                println!("NUMBER {} {}.0", numbers, parts[0]);
+                            } else {
+                                println!("NUMBER {} {}.{}", numbers, parts[0], decimal_part);
+                            }
                         } else {
                             println!("NUMBER {} {}", numbers, numbers);
                         }

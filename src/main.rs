@@ -1,6 +1,8 @@
 mod lexer;
 mod parser;
 
+use parser::Token;
+
 use crate::lexer::Lexer;
 use crate::parser::Parser;
 use std::env;
@@ -43,19 +45,8 @@ fn main() {
             let mut parser = Parser::new();
             let (exit_code, tokens) = parser.parse(&file_contents);
 
-            // Print the tokens for verification
-            for token in tokens {
-                //println!("{} {} {}", token.token_type, token.lexeme, token.literal);
-                match token.token_type.as_str() {
-                    "TRUE" => println!("true"),
-                    "FALSE" => println!("false"),
-                    "NIL" => println!("nil"),
-                    "NUMBER" => println!("{}", token.literal),
-                    "STRING" => println!("{}", token.literal),
-                    _ => {}
-                }
-            }
-
+            let result = parse_more(tokens);
+            println!("{}", result);
             quit::with_code(exit_code);
         }
         _ => {
@@ -63,4 +54,52 @@ fn main() {
             quit::with_code(64);
         }
     }
+}
+
+fn parse_more(tokens: Vec<Token>) -> String {
+    let mut result = String::new();
+    let mut i = 0;
+
+    while i < tokens.len() {
+        let token = &tokens[i];
+        let token_type = token.token_type.as_str();
+
+        match token_type {
+            "TRUE" => result.push_str("true"),
+            "FALSE" => result.push_str("false"),
+            "NIL" => result.push_str("nil"),
+            "NUMBER" | "STRING" => {
+                result.push_str(&token.literal);
+            }
+            "LEFT_PAREN" => {
+                // Find all tokens until matching RIGHT_PAREN
+                let mut inner_tokens = Vec::new();
+                let mut paren_count = 1;
+                i += 1;
+
+                while i < tokens.len() && paren_count > 0 {
+                    let inner_token = &tokens[i];
+                    let inner_type = inner_token.token_type.as_str();
+
+                    if inner_type == "LEFT_PAREN" {
+                        paren_count += 1;
+                    } else if inner_type == "RIGHT_PAREN" {
+                        paren_count -= 1;
+                        if paren_count == 0 {
+                            break;
+                        }
+                    }
+                    inner_tokens.push(inner_token.clone());
+                    i += 1;
+                }
+
+                let inner_result = parse_more(inner_tokens);
+                result.push_str(&format!("(group {})", inner_result));
+            }
+            _ => {}
+        }
+        i += 1;
+    }
+
+    result
 }
