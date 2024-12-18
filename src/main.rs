@@ -96,36 +96,59 @@ fn parse_more(tokens: Vec<Token>) -> String {
                 let inner_result = parse_more(inner_tokens);
                 result.push_str(&format!("(group {})", inner_result));
             }
+
             "BANG" => {
-                let mut nested_result = String::new();
-                let mut count = 1; // Starting with the first '!'
-
-                // Process subsequent '!' tokens
-                while let Some(next_token) = tokens.get(i + count) {
-                    if next_token.lexeme.as_str() == "!" {
-                        nested_result.push_str("!");
-                        count += 1; // Skip the next '!' token
-                    } else {
-                        break; // Stop if it's not another '!'
-                    }
-                }
-
-                // Now process the token after the sequence of '!'
-                if let Some(token) = tokens.get(i + count) {
-                    let token_type = token.lexeme.as_str();
-                    nested_result.push_str(&format!(" ({})", token_type));
-                }
-
-                i += count; // Move the index forward by the number of '!' processed
-                result.push_str(&format!("(! {})", nested_result));
-            }
-            "MINUS" => {
-                let token1 = &tokens[i + 1];
-                let token_type1 = token1.literal.as_str();
-
+                let mut bang_count = 1;
                 i += 1;
-                result.push_str(&format!("(- {})", token_type1));
+
+                while i < tokens.len() && tokens[i].token_type.as_str() == "BANG" {
+                    bang_count += 1;
+                    i += 1;
+                }
+
+                if i >= tokens.len() {
+                    panic!("Unexpected end of input after '!'");
+                }
+
+                let next_token = &tokens[i];
+                i += 1;
+
+                let next_result = parse_more(vec![next_token.clone()]);
+
+                let mut bang_result = next_result;
+                for _ in 0..bang_count {
+                    bang_result = format!("(! {})", bang_result);
+                }
+
+                result.push_str(&bang_result);
             }
+
+            "MINUS" => {
+                let mut minus_count = 1; // Count consecutive MINUS tokens
+                i += 1;
+
+                while i < tokens.len() && tokens[i].token_type.as_str() == "MINUS" {
+                    minus_count += 1;
+                    i += 1;
+                }
+
+                if i >= tokens.len() {
+                    panic!("Unexpected end of input after '-'");
+                }
+
+                let next_token = &tokens[i];
+                i += 1;
+
+                let next_result = parse_more(vec![next_token.clone()]);
+
+                let mut minus_result = next_result;
+                for _ in 0..minus_count {
+                    minus_result = format!("(- {})", minus_result);
+                }
+
+                result.push_str(&minus_result);
+            }
+
             _ => {}
         }
         i += 1;
