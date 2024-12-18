@@ -97,10 +97,27 @@ fn parse_more(tokens: Vec<Token>) -> String {
                 result.push_str(&format!("(group {})", inner_result));
             }
             "BANG" => {
-                let token1 = &tokens[i + 1];
-                let token_type1 = token1.lexeme.as_str();
-                i += 1;
-                result.push_str(&format!("(! {})", token_type1));
+                let mut nested_result = String::new();
+                let mut count = 1; // Starting with the first '!'
+
+                // Process subsequent '!' tokens
+                while let Some(next_token) = tokens.get(i + count) {
+                    if next_token.lexeme.as_str() == "!" {
+                        nested_result.push_str("!");
+                        count += 1; // Skip the next '!' token
+                    } else {
+                        break; // Stop if it's not another '!'
+                    }
+                }
+
+                // Now process the token after the sequence of '!'
+                if let Some(token) = tokens.get(i + count) {
+                    let token_type = token.lexeme.as_str();
+                    nested_result.push_str(&format!(" ({})", token_type));
+                }
+
+                i += count; // Move the index forward by the number of '!' processed
+                result.push_str(&format!("(! {})", nested_result));
             }
             "MINUS" => {
                 let token1 = &tokens[i + 1];
