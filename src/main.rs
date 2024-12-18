@@ -96,6 +96,12 @@ fn parse_more(tokens: Vec<Token>) -> String {
                 let inner_result = parse_more(inner_tokens);
                 result.push_str(&format!("(group {})", inner_result));
             }
+            "BANG" => {
+                let token1 = &tokens[i + 1];
+                let token_type1 = token1.literal.as_str();
+
+                result.push_str(&format!("(! {})", token_type1));
+            }
             _ => {}
         }
         i += 1;
