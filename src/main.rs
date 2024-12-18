@@ -99,13 +99,14 @@ fn parse_more(tokens: Vec<Token>) -> String {
             "BANG" => {
                 let token1 = &tokens[i + 1];
                 let token_type1 = token1.lexeme.as_str();
-
+                i += 1;
                 result.push_str(&format!("(! {})", token_type1));
             }
             "MINUS" => {
                 let token1 = &tokens[i + 1];
                 let token_type1 = token1.literal.as_str();
 
+                i += 1;
                 result.push_str(&format!("(- {})", token_type1));
             }
             _ => {}
