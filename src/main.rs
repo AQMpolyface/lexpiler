@@ -51,6 +51,7 @@ fn main() {
                     "FALSE" => println!("false"),
                     "NIL" => println!("nil"),
                     "NUMBER" => println!("{}", token.literal),
+                    "STRING" => println!("{}", token.literal),
                     _ => {}
                 }
             }
