@@ -9,6 +9,7 @@ use std::env;
 use std::fs;
 use std::io::{self, Write};
 
+//using external crate cuz the std::exit_with_code msde some weird mess with the stdout
 #[quit::main]
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -44,9 +45,16 @@ fn main() {
 
             let mut parser = Parser::new();
             let (exit_code, tokens) = parser.parse(&file_contents);
-
+            //println!("tokens: {:?}", tokens);
             let result = parse_more(tokens);
-            println!("{}", result);
+            /*for (num, tokensuwu) in result.clone().iter().enumerate() {
+                println!("result from result1:, number: {} {}", num, tokensuwu);
+            } */
+            //let result2 = parse_signs(result);
+
+            for uwu in result {
+                println!("{}", uwu);
+            }
             quit::with_code(exit_code);
         }
         _ => {
@@ -55,68 +63,48 @@ fn main() {
         }
     }
 }
+fn parse_signs(tokens: Vec<String>) -> Vec<String> {
+    let mut result = tokens.clone();
 
-fn parse_more(tokens: Vec<Token>) -> String {
-    let mut result = String::new();
-    let mut i = 0;
+    // First pass: handle multiplication and division left to right
+    let mut i = 1; // Start at 1 since we need to look at previous token
+    while i < result.len() {
+        match result[i].as_str() {
+            "*" | "/" => {
+                if i > 0 && i < result.len() - 1 {
+                    let operator = result[i].clone();
+                    let lhs = result[i - 1].clone();
+                    let rhs = result[i + 1].clone();
 
-    while i < tokens.len() {
-        let token = &tokens[i];
+                    // Create the new expression
+                    let new_expr = format!("({} {} {})", operator, lhs, rhs);
 
-        match token.token_type.as_str() {
-            "TRUE" => result.push_str("true"),
-            "FALSE" => result.push_str("false"),
-            "NIL" => result.push_str("nil"),
-            "NUMBER" | "STRING" => {
-                result.push_str(&token.literal);
-            }
-            "LEFT_PAREN" => {
-                let mut inner_tokens = Vec::new();
-                let mut paren_count = 1;
-                i += 1;
+                    // Replace the three tokens with the new expression
+                    result.splice(i - 1..=i + 1, vec![new_expr]);
 
-                while i < tokens.len() && paren_count > 0 {
-                    match tokens[i].token_type.as_str() {
-                        "LEFT_PAREN" => {
-                            paren_count += 1;
-                            inner_tokens.push(tokens[i].clone());
-                        }
-                        "RIGHT_PAREN" => {
-                            paren_count -= 1;
-                            if paren_count > 0 {
-                                inner_tokens.push(tokens[i].clone());
-                            }
-                        }
-                        _ => inner_tokens.push(tokens[i].clone()),
-                    }
-                    i += 1;
+                    // Don't increment i since we need to check the next operator
+                    // from the current position after modification
+                    continue;
                 }
-                i -= 1; // Adjust for the outer loop increment
-
-                let inner_result = parse_more(inner_tokens);
-                result.push_str(&format!("(group {})", inner_result));
             }
-            "BANG" => {
-                // Look ahead to collect all tokens that should be under this BANG
-                let mut remaining_tokens = Vec::new();
-                let mut j = i + 1;
+            _ => {}
+        }
+        i += 1;
+    }
 
-                while j < tokens.len() {
-                    remaining_tokens.push(tokens[j].clone());
-                    j += 1;
-                }
+    // Second pass: handle remaining operators
+    let mut i = 1;
+    while i < result.len() {
+        match result[i].as_str() {
+            "+" | "-" => {
+                if i > 0 && i < result.len() - 1 {
+                    let operator = result[i].clone();
+                    let lhs = result[i - 1].clone();
+                    let rhs = result[i + 1].clone();
 
-                let inner_result = parse_more(remaining_tokens);
-                result.push_str(&format!("(! {})", inner_result));
-                break; // Exit after processing all remaining tokens
-            }
-            "MINUS" => {
-                // Similar to BANG handling
-                i += 1;
-                if i < tokens.len() {
-                    let mut inner_tokens = vec![tokens[i].clone()];
-                    let inner_result = parse_more(inner_tokens);
-                    result.push_str(&format!("(- {})", inner_result));
+                    let new_expr = format!("({} {} {})", operator, lhs, rhs);
+                    result.splice(i - 1..=i + 1, vec![new_expr]);
+                    continue;
                 }
             }
             _ => {}
@@ -125,4 +113,128 @@ fn parse_more(tokens: Vec<Token>) -> String {
     }
 
     result
+}
+fn parse_more(tokens: Vec<Token>) -> Vec<String> {
+    let mut result = Vec::new();
+    let mut i = 0;
+    let mut send_sign = false;
+    while i < tokens.len() {
+        let token = &tokens[i];
+        let token_type = token.token_type.as_str();
+
+        match token_type {
+            "TRUE" => result.push("true".to_string()),
+            "FALSE" => result.push("false".to_string()),
+            "NIL" => result.push("nil".to_string()),
+            "NUMBER" | "STRING" => {
+                result.push(token.literal.clone());
+            }
+            "LEFT_PAREN" => {
+                // Find all tokens until matching RIGHT_PAREN
+                let mut inner_tokens = Vec::new();
+                let mut paren_count = 1;
+                i += 1;
+
+                while i < tokens.len() && paren_count > 0 {
+                    let inner_token = &tokens[i];
+                    let inner_type = inner_token.token_type.as_str();
+
+                    if inner_type == "LEFT_PAREN" {
+                        paren_count += 1;
+                    } else if inner_type == "RIGHT_PAREN" {
+                        paren_count -= 1;
+                        if paren_count == 0 {
+                            break;
+                        }
+                    }
+                    inner_tokens.push(inner_token.clone());
+                    i += 1;
+                }
+
+                let inner_result = parse_more(inner_tokens);
+                result.push(format!("(group {})", inner_result.join(" ")));
+            }
+
+            "BANG" => {
+                i += 1; // Advance to the next token after the first BANG
+                let mut inner_tokens: Vec<Token> = Vec::new();
+
+                // Collect consecutive BANG tokens
+                while i < tokens.len() && tokens[i].token_type.as_str() == "BANG"
+                    || tokens[i].token_type.as_str() == "LEFT_PAREN"
+                {
+                    inner_tokens.push(tokens[i].clone());
+                    i += 1;
+                }
+
+                // Ensure there's a non-BANG token after the sequence
+                if i < tokens.len() {
+                    inner_tokens.push(tokens[i].clone());
+                    i += 1; // Consume the final token
+                } else {
+                    panic!("Unexpected end of input after BANG tokens");
+                }
+
+                // Parse the collected tokens
+                let inner_result = parse_more(inner_tokens);
+                result.push(format!("(! {})", inner_result.join(" ")));
+            }
+
+            "MINUS" => {
+                i += 1;
+
+                let mut inner_tokens: Vec<Token> = Vec::new();
+                inner_tokens.push(tokens[i].clone());
+                let inner_result = parse_more(inner_tokens);
+                result.push(format!("(- {})", inner_result.join(" ")));
+                /*  i += 1; // Advance to the next token after the first MINUS
+                let mut inner_tokens: Vec<Token> = Vec::new();
+
+                // Collect consecutive MINUS tokens
+
+                while i < tokens.len()
+                    && (tokens[i].token_type.as_str() == "MINUS"
+                        || tokens[i].token_type.as_str() == "LEFT_PAREN")
+                {
+                    inner_tokens.push(tokens[i].clone());
+                    i += 1;
+                }
+
+                // Ensure there's a non-MINUS token after the sequence
+                if i < tokens.len() {
+                    inner_tokens.push(tokens[i].clone());
+                    i += 1; // Consume the final token
+                } else {
+                    panic!("Unexpected end of input after MINUS tokens");
+                }
+
+                // Parse the collected tokens
+                let inner_result = parse_more(inner_tokens);
+                result.push(format!("(- {})", inner_result.join(" ")));*/
+            }
+            "SLASH" => {
+                result.push("/".to_string());
+                send_sign = true;
+            }
+            "STAR" => {
+                result.push("*".to_string());
+
+                send_sign = true;
+            }
+
+            _ => {
+                /*   println!(
+                    "unknown token: {} {} {}",
+                    token.lexeme, token.literal, token.token_type
+                );
+                */
+            }
+        }
+        i += 1;
+    }
+    if send_sign {
+        parse_signs(result)
+    } else {
+        result
+    }
 }
