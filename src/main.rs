@@ -140,7 +140,7 @@ fn parse_more(tokens: Vec<Token>) -> String {
 
                 // Parse the collected tokens
                 let result1 = parse_more(inner_tokens);
-                result.push_str(&format!("(! {})", result1));
+                result.push_str(&format!("(- {})", result1));
             }
 
             _ => {}
