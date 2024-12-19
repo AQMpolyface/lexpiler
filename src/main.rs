@@ -47,9 +47,11 @@ fn main() {
             let (exit_code, tokens) = parser.parse(&file_contents);
             //println!("tokens: {:?}", tokens);
             let result = parse_more(tokens);
-            /*for (num, tokensuwu) in result.clone().iter().enumerate() {
+
+            /*
+            for (num, tokensuwu) in result.clone().iter().enumerate() {
                 println!("result from result1:, number: {} {}", num, tokensuwu);
-            } */
+            }*/
             //let result2 = parse_signs(result);
 
             for uwu in result {
@@ -63,11 +65,34 @@ fn main() {
         }
     }
 }
+
 fn parse_signs(tokens: Vec<String>) -> Vec<String> {
     let mut result = tokens.clone();
 
-    // First pass: handle multiplication and division left to right
-    let mut i = 1; // Start at 1 since we need to look at previous token
+    // First pass: handle unary minus
+    let mut i = 0;
+    while i < result.len() {
+        if result[i] == "-" {
+            // Check if it's a unary minus (at start or after another operator)
+            if i == 0
+                || (i > 0
+                    && (result[i - 1] == "+"
+                        || result[i - 1] == "-"
+                        || result[i - 1] == "*"
+                        || result[i - 1] == "/"))
+            {
+                if i + 1 < result.len() {
+                    let rhs = result[i + 1].clone();
+                    let new_expr = format!("(- {})", rhs);
+                    result.splice(i..=i + 1, vec![new_expr]);
+                }
+            }
+        }
+        i += 1;
+    }
+
+    // Second pass: handle multiplication and division
+    let mut i = 1;
     while i < result.len() {
         match result[i].as_str() {
             "*" | "/" => {
@@ -75,15 +100,8 @@ fn parse_signs(tokens: Vec<String>) -> Vec<String> {
                     let operator = result[i].clone();
                     let lhs = result[i - 1].clone();
                     let rhs = result[i + 1].clone();
-
-                    // Create the new expression
                     let new_expr = format!("({} {} {})", operator, lhs, rhs);
-
-                    // Replace the three tokens with the new expression
                     result.splice(i - 1..=i + 1, vec![new_expr]);
-
-                    // Don't increment i since we need to check the next operator
-                    // from the current position after modification
                     continue;
                 }
             }
@@ -92,7 +110,7 @@ fn parse_signs(tokens: Vec<String>) -> Vec<String> {
         i += 1;
     }
 
-    // Second pass: handle remaining operators
+    // Third pass: handle addition and subtraction
     let mut i = 1;
     while i < result.len() {
         match result[i].as_str() {
@@ -101,7 +119,6 @@ fn parse_signs(tokens: Vec<String>) -> Vec<String> {
                     let operator = result[i].clone();
                     let lhs = result[i - 1].clone();
                     let rhs = result[i + 1].clone();
-
                     let new_expr = format!("({} {} {})", operator, lhs, rhs);
                     result.splice(i - 1..=i + 1, vec![new_expr]);
                     continue;
@@ -114,23 +131,23 @@ fn parse_signs(tokens: Vec<String>) -> Vec<String> {
 
     result
 }
+
 fn parse_more(tokens: Vec<Token>) -> Vec<String> {
     let mut result = Vec::new();
     let mut i = 0;
     let mut send_sign = false;
+    let mut has_shitty_sign = false;
+    let mut debug = false;
     while i < tokens.len() {
         let token = &tokens[i];
         let token_type = token.token_type.as_str();
 
         match token_type {
-            "TRUE" => result.push("true".to_string()),
-            "FALSE" => result.push("false".to_string()),
-            "NIL" => result.push("nil".to_string()),
             "NUMBER" | "STRING" => {
                 result.push(token.literal.clone());
             }
             "LEFT_PAREN" => {
-                // Find all tokens until matching RIGHT_PAREN
+                // Handle grouped expressions
                 let mut inner_tokens = Vec::new();
                 let mut paren_count = 1;
                 i += 1;
@@ -154,7 +171,25 @@ fn parse_more(tokens: Vec<Token>) -> Vec<String> {
                 let inner_result = parse_more(inner_tokens);
                 result.push(format!("(group {})", inner_result.join(" ")));
             }
-
+            "MINUS" => {
+                result.push("-".to_string());
+                send_sign = true;
+            }
+            "PLUS" => {
+                result.push("+".to_string());
+                send_sign = true;
+            }
+            "SLASH" => {
+                result.push("/".to_string());
+                send_sign = true;
+            }
+            "STAR" => {
+                result.push("*".to_string());
+                send_sign = true;
+            }
+            "TRUE" | "FALSE" | "NIL" => {
+                result.push(token.lexeme.clone());
+            }
             "BANG" => {
                 i += 1; // Advance to the next token after the first BANG
                 let mut inner_tokens: Vec<Token> = Vec::new();
@@ -179,65 +214,16 @@ fn parse_more(tokens: Vec<Token>) -> Vec<String> {
                 let inner_result = parse_more(inner_tokens);
                 result.push(format!("(! {})", inner_result.join(" ")));
             }
-            "PLUS" => {
-                result.push("+".to_string());
-                send_sign = true;
-            }
-            "MINUS" => {
-                result.push("-".to_string());
-                send_sign = true;
-                /*
-                i += 1;
-
-                let mut inner_tokens: Vec<Token> = Vec::new();
-                inner_tokens.push(tokens[i].clone());
-                let inner_result = parse_more(inner_tokens);
-                result.push(format!("(- {})", inner_result.join(" ")));
-                */
-                /*  i += 1; // Advance to the next token after the first MINUS
-                let mut inner_tokens: Vec<Token> = Vec::new();
-
-                // Collect consecutive MINUS tokens
-
-                while i < tokens.len()
-                    && (tokens[i].token_type.as_str() == "MINUS"
-                        || tokens[i].token_type.as_str() == "LEFT_PAREN")
-                {
-                    inner_tokens.push(tokens[i].clone());
-                    i += 1;
-                }
-
-                // Ensure there's a non-MINUS token after the sequence
-                if i < tokens.len() {
-                    inner_tokens.push(tokens[i].clone());
-                    i += 1; // Consume the final token
-                } else {
-                    panic!("Unexpected end of input after MINUS tokens");
-                }
-
-                // Parse the collected tokens
-                let inner_result = parse_more(inner_tokens);
-                result.push(format!("(- {})", inner_result.join(" ")));*/
-            }
-            "SLASH" => {
-                result.push("/".to_string());
-                send_sign = true;
-            }
-            "STAR" => {
-                result.push("*".to_string());
-
-                send_sign = true;
-            }
-
-            _ => {
-                /*   println!(
-                    "unknown token: {} {} {}",
-                    token.lexeme, token.literal, token.token_type
-                );
-                */
-            }
+            _ => {}
         }
         i += 1;
+    }
+    if debug {
+        if send_sign {
+            println!("callinf parse_sign on{:#?}", result);
+        } else {
+            println!("not calling parse sign on {:?}", result);
+        }
     }
     if send_sign {
         parse_signs(result)

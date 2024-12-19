@@ -142,6 +142,9 @@ impl Parser {
                         let parts: Vec<&str> = numbers.split('.').collect();
                         if parts.len() == 2 && parts[1].chars().all(|c| c == '0') {
                             self.add_token("NUMBER", &numbers, &format!("{}.0", parts[0]));
+                        } else if parts.len() == 2 && parts[1].ends_with("0") {
+                            let end = trim_zero(parts[1]);
+                            self.add_token("NUMBER", &numbers, &format!("{}.{}", parts[0], end));
                         } else {
                             self.add_token("NUMBER", &numbers, &numbers);
                         }
@@ -283,5 +286,17 @@ impl Parser {
             lexeme: lexeme.to_string(),
             literal: "null".to_string(),
         })
+    }
+}
+fn trim_zero(number: &str) -> String {
+    let trimmed = number.trim_end_matches('0');
+    if trimmed.is_empty() {
+        "0".to_string()
+    } else {
+        if trimmed.ends_with('.') {
+            trimmed[..trimmed.len() - 1].to_string()
+        } else {
+            trimmed.to_string()
+        }
     }
 }
