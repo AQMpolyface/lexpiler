@@ -52,9 +52,9 @@ fn main() {
             for (num, tokensuwu) in result.clone().iter().enumerate() {
                 println!("result from result1:, number: {} {}", num, tokensuwu);
             }*/
-            //let result2 = parse_signs(result);
+            let result2 = parse_equals(result);
 
-            for uwu in result {
+            for uwu in result2 {
                 println!("{}", uwu);
             }
             quit::with_code(exit_code);
@@ -65,7 +65,29 @@ fn main() {
         }
     }
 }
-
+fn parse_equals(tokens: Vec<String>) -> Vec<String> {
+    let mut result = tokens.clone();
+    let mut i = 1;
+    for tokenuwu in tokens {
+        while i < result.len() {
+            match result[i].as_str() {
+                "<" | ">" | ">=" | "<=" => {
+                    if i > 0 && i < result.len() - 1 {
+                        let operator = result[i].clone();
+                        let lhs = result[i - 1].clone();
+                        let rhs = result[i + 1].clone();
+                        let new_expr = format!("({} {} {})", operator, lhs, rhs);
+                        result.splice(i - 1..=i + 1, vec![new_expr]);
+                        continue;
+                    }
+                }
+                _ => {}
+            }
+            i += 1;
+        }
+    }
+    result
+}
 fn parse_signs(tokens: Vec<String>) -> Vec<String> {
     let mut result = tokens.clone();
 
@@ -213,6 +235,9 @@ fn parse_more(tokens: Vec<Token>) -> Vec<String> {
                 // Parse the collected tokens
                 let inner_result = parse_more(inner_tokens);
                 result.push(format!("(! {})", inner_result.join(" ")));
+            }
+            "GREATER_EQUAL" | "LESS_EQUAL" | "GREATER" | "LESS" => {
+                result.push(token.lexeme.clone());
             }
             _ => {}
         }
