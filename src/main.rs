@@ -98,55 +98,49 @@ fn parse_more(tokens: Vec<Token>) -> String {
             }
 
             "BANG" => {
-                let mut bang_count = 1;
-                i += 1;
+                i += 1; // Advance to the next token after the first BANG
+                let mut inner_tokens: Vec<Token> = Vec::new();
 
+                // Collect consecutive BANG tokens
                 while i < tokens.len() && tokens[i].token_type.as_str() == "BANG" {
-                    bang_count += 1;
+                    inner_tokens.push(tokens[i].clone());
                     i += 1;
                 }
 
-                if i >= tokens.len() {
-                    panic!("Unexpected end of input after '!'");
+                // Ensure there's a non-BANG token after the sequence
+                if i < tokens.len() {
+                    inner_tokens.push(tokens[i].clone());
+                    i += 1; // Consume the final token
+                } else {
+                    panic!("Unexpected end of input after BANG tokens");
                 }
 
-                let next_token = &tokens[i];
-                i += 1;
-
-                let next_result = parse_more(vec![next_token.clone()]);
-
-                let mut bang_result = next_result;
-                for _ in 0..bang_count {
-                    bang_result = format!("(! {})", bang_result);
-                }
-
-                result.push_str(&bang_result);
+                // Parse the collected tokens
+                let result1 = parse_more(inner_tokens);
+                result.push_str(&format!("(! {})", result1));
             }
 
             "MINUS" => {
-                let mut minus_count = 1; // Count consecutive MINUS tokens
                 i += 1;
+                let mut inner_tokens: Vec<Token> = Vec::new();
 
+                // Collect consecutive BANG tokens
                 while i < tokens.len() && tokens[i].token_type.as_str() == "MINUS" {
-                    minus_count += 1;
+                    inner_tokens.push(tokens[i].clone());
                     i += 1;
                 }
 
-                if i >= tokens.len() {
-                    panic!("Unexpected end of input after '-'");
+                // Ensure there's a non-BANG token after the sequence
+                if i < tokens.len() {
+                    inner_tokens.push(tokens[i].clone());
+                    i += 1; // Consume the final token
+                } else {
+                    panic!("Unexpected end of input after BANG tokens");
                 }
 
-                let next_token = &tokens[i];
-                i += 1;
-
-                let next_result = parse_more(vec![next_token.clone()]);
-
-                let mut minus_result = next_result;
-                for _ in 0..minus_count {
-                    minus_result = format!("(- {})", minus_result);
-                }
-
-                result.push_str(&minus_result);
+                // Parse the collected tokens
+                let result1 = parse_more(inner_tokens);
+                result.push_str(&format!("(! {})", result1));
             }
 
             _ => {}
