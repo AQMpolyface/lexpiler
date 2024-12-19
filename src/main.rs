@@ -179,14 +179,21 @@ fn parse_more(tokens: Vec<Token>) -> Vec<String> {
                 let inner_result = parse_more(inner_tokens);
                 result.push(format!("(! {})", inner_result.join(" ")));
             }
-
+            "PLUS" => {
+                result.push("+".to_string());
+                send_sign = true;
+            }
             "MINUS" => {
+                result.push("-".to_string());
+                send_sign = true;
+                /*
                 i += 1;
 
                 let mut inner_tokens: Vec<Token> = Vec::new();
                 inner_tokens.push(tokens[i].clone());
                 let inner_result = parse_more(inner_tokens);
                 result.push(format!("(- {})", inner_result.join(" ")));
+                */
                 /*  i += 1; // Advance to the next token after the first MINUS
                 let mut inner_tokens: Vec<Token> = Vec::new();
 
